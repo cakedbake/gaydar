@@ -81,7 +81,9 @@ client.on("messageCreate", async (msg) => {
 			throw new Error();
 		}
 
-		await msg.reply(`Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`).catch(() => {});
+		await msg.reply(`Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`).catch(() => {
+			msg.channel.send(`Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`).catch(() => {});
+		});
 	} catch (error) {
 		clearInterval(interval);
 		await msg.reply("An error occurred. You are too gay for me to handle.");
