@@ -17,7 +17,7 @@ const provider = new OpenAI({
 });
 
 client.on("messageCreate", async (msg) => {
-	if (msg.type !== 7) { return; } // 7 = join message
+	if (msg.type !== 7) { return; }
 
 	await msg.channel.sendTyping();
 
@@ -43,7 +43,7 @@ client.on("messageCreate", async (msg) => {
 
 	messages.push({ "role": "user", "content": "Guild info:\n```json\n" + JSON.stringify(user.guild) + "\n```" });
 
-	// TO-DO: check if this AI-generated junk works
+	// TO-DO: check if this AI-generated garbage works
 	if (user.guild.icon) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild icon:" }, { "type": "image_url", "image_url": { "url": user.guild.iconURL({ format: "png", size: 1024 }) } } ] });
 	}
@@ -54,16 +54,16 @@ client.on("messageCreate", async (msg) => {
 
 	messages.push({ "role": "assistant", "content": "{\n    \"gay\": ", "prefix": true});
 
+	let response;
+
 	try {
-		let response = await provider.chat.completions.create({
+		response = await provider.chat.completions.create({
 			"model": "pixtral-12b-2409",
 			"messages": messages,
 			"max_tokens": 20,
 			"temperature": 0.1,
 			"stop": [ "}" ]
 		});
-
-		clearInterval(interval);
 
 		response = response.choices[0].message.content;
 
@@ -81,13 +81,33 @@ client.on("messageCreate", async (msg) => {
 			throw new Error();
 		}
 
-		await msg.reply(`Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`).catch(() => {
-			msg.channel.send(`Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`).catch(() => {});
+		const reply = `Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`;
+
+		clearInterval(interval);
+
+		await msg.reply(reply).catch(async () => {
+			await msg.channel.send(reply).catch(() => {});
 		});
 	} catch (error) {
-		clearInterval(interval);
-		await msg.reply("An error occurred. You are too gay for me to handle.");
 		console.error(error);
+		let message = "Messages:\n```json\n" + JSON.stringify(messages, null, 4) + "\n```";
+		if (response) {
+			message += "\n\nResponse:\n```\n" + response + "\n```";
+		}
+		message += "\n\nError stack:\n" + error.stack;
+		const reply = {
+			"content": `You have successfully broken the <@${client.user.id}>. Congratulations. View error log attached below for more information.`,
+			"files": [
+				{
+					"attachment": Buffer.from(message),
+					"name": "error.txt"
+				}
+			]
+		};
+		clearInterval(interval);
+		await msg.reply(reply).catch(async () => {
+			await msg.channel.send(reply).catch(() => {});
+		});
 		return;
 	}
 });
