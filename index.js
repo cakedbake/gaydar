@@ -16,22 +16,14 @@ const provider = new OpenAI({
 	"baseURL": "https://api.mistral.ai/v1"
 });
 
-client.on("messageCreate", async (msg) => {
-	if (msg.type !== 7) { return; }
-
-	await msg.channel.sendTyping();
-
-	const interval = setInterval(async () => {
-		await msg.channel.sendTyping();
-	}, 5000);
-
-	let user = await msg.guild.members.fetch(msg.author.id);
+// analyse a GuildMember
+async function analyse(user) {
 
 	let messages = [
 		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"gay\": X } where X is a number between 0 and 100. The higher the number, the more gay the profile is." }
 	];
 
-	messages.push({ "role": "user", "content": "User profile:\n```json\n" + JSON.stringify(user) });
+	messages.push({ "role": "user", "content": "User profile:\n```json\n" + JSON.stringify(user) + "\n```" });
 
 	if (user.avatar) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "User avatar:" }, { "type": "image_url", "image_url": { "url": user.avatarURL({ format: "png", size: 1024 }) } } ] });
@@ -43,7 +35,6 @@ client.on("messageCreate", async (msg) => {
 
 	messages.push({ "role": "user", "content": "Guild info:\n```json\n" + JSON.stringify(user.guild) + "\n```" });
 
-	// TO-DO: check if this AI-generated garbage works
 	if (user.guild.icon) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild icon:" }, { "type": "image_url", "image_url": { "url": user.guild.iconURL({ format: "png", size: 1024 }) } } ] });
 	}
@@ -52,7 +43,7 @@ client.on("messageCreate", async (msg) => {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild banner:" }, { "type": "image_url", "image_url": { "url": user.guild.bannerURL({ format: "png", size: 1024 }) } } ] });
 	}
 
-	messages.push({ "role": "assistant", "content": "{\n    \"gay\": ", "prefix": true});
+	messages.push({ "role": "assistant", "content": "{ \"gay\": ", "prefix": true});
 
 	let response;
 
@@ -60,60 +51,113 @@ client.on("messageCreate", async (msg) => {
 		response = await provider.chat.completions.create({
 			"model": "pixtral-12b-2409",
 			"messages": messages,
-			"max_tokens": 20,
-			"temperature": 0.1,
+			"max_tokens": 8,
+			"temperature": 0,
 			"stop": [ "}" ]
 		});
+	} catch (error) {
+		throw error;
+	}
 
-		response = response.choices[0].message.content;
+	response = response.choices[0].message.content;
+	// { "gay": 123
 
-		console.log(response);
+	response = response + " }";
+	// { "gay": 123 }
 
-		let json = response + " }";
+	response = JSON.parse(response); // don't catch
+	// { gay: 123 }
 
-		console.log(json)
+	response = Number(response.gay); // just in case the LLM is gay and can't produce a valid number
+	// 
 
-		json = JSON.parse(json);
+	if (isNaN(response)) {
+		throw new TypeError("The LLM is gay and can't produce a valid number.");
+	}
 
-		json.gay = Number(json.gay); // just in case the LLM is gay and can't produce a number
+	// response += Number(((Math.random() * 10) - 5).toFixed(2));
 
-		if (isNaN(json.gay)) {
-			throw new Error();
-		}
+	response = Math.max(0, Math.min(100, response));
 
-		const reply = `Analysis complete. Results: <@${user.id}> is \`${json.gay}\`% gay.`;
+	return response;
+}
+
+client.on("messageCreate", async (msg) => {
+	if (msg.type !== 7) { return; }
+
+	if (process.argv[2] === "--manual") { return; }
+
+	await msg.channel.sendTyping();
+
+	const interval = setInterval(async () => {
+		await msg.channel.sendTyping();
+	}, 5000);
+
+	let user = await msg.guild.members.fetch(msg.author.id);
+
+	try {
+		const analysis = await analyse(user);
+
+		const reply = `Analysis complete. Results: <@${user.id}> is \`${analysis}\`% gay.`;
 
 		clearInterval(interval);
 
-		await msg.reply(reply).catch(async () => {
-			await msg.channel.send(reply).catch(() => {});
-		});
+		try {
+			await msg.reply(reply);
+		} catch {
+			await msg.channel.send(reply); // handled by the catch 2 lines down
+		}
 	} catch (error) {
 		console.error(error);
-		let message = "Messages:\n```json\n" + JSON.stringify(messages, null, 4) + "\n```";
-		if (response) {
-			message += "\n\nResponse:\n```\n" + response + "\n```";
-		}
-		message += "\n\nError stack:\n" + error.stack;
-		const reply = {
-			"content": `You have successfully broken the <@${client.user.id}>. Congratulations. View error log attached below for more information.`,
-			"files": [
-				{
-					"attachment": Buffer.from(message),
-					"name": "error.txt"
-				}
-			]
-		};
+		const reply = "You have successfully broken the <@" + client.user.id + ">. Congratulations.\n```\n" + error.toString() + "\n```";
 		clearInterval(interval);
-		await msg.reply(reply).catch(async () => {
-			await msg.channel.send(reply).catch(() => {});
-		});
+		try {
+			await msg.reply(reply);
+		} catch {
+			try {
+				await msg.channel.send(reply);
+			} catch { /* it's joever */ }
+		}
 		return;
 	}
 });
 
 client.login(process.env.TOKEN);
 
-client.on("ready", () => {
+client.on("ready", async () => {
 	console.log("ready to ruin some lives as", client.user.tag);
+
+	
+	if (process.argv[2] !== "--manual") { return; }
+	// /usr/bin/node .../index.js --manual GUILD_ID USER_ID
+	if (!process.argv[4]) {
+		console.error("Usage:", process.argv[1], process.argv[2], "<GUILD_ID> <USER_ID>");
+		process.exit(1);
+	}
+
+	const guild = client.guilds.cache.get(process.argv[3]);
+	if (!guild) {
+		console.error("Invalid guild ID:", process.argv[3]);
+		process.exit(1);
+	}
+
+	// fetch the user (no cache)
+	let user;
+	try {
+		user = await guild.members.fetch(process.argv[4]);
+	} catch (error) {
+		console.error(error);
+		process.exit(1);
+	}
+
+	// anal-yze the user
+	try {
+		const analysis = await analyse(user);
+		console.log("Analysis complete. Results:", user.user.tag, "(ID:" + user.user.id + ") is", analysis, "% gay.");
+	} catch (error) {
+		console.error(error);
+		process.exit(1);
+	}
+
+	process.exit(0);
 });
