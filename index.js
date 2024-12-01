@@ -4,6 +4,7 @@ import discord from "discord.js";
 import dotenv from "dotenv";
 import validator from "validator";
 import OpenAI from "openai";
+import fs from "node:fs";
 
 dotenv.config();
 
@@ -18,6 +19,17 @@ const provider = new OpenAI({
 
 // analyse a GuildMember
 async function analyse(user) {
+	if (fs.existsSync("cache.json")) {
+		try {
+			let cache = JSON.parse(fs.readFileSync("cache.json"));
+
+			if (cache[`${user.guild.id},${user.id}`]) {
+				return cache[`${user.guild.id},${user.id}`];
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
 	let messages = [
 		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"gay\": X } where X is a number between 0 and 100. The higher the number, the more gay the profile is." }
@@ -78,6 +90,18 @@ async function analyse(user) {
 	// response += Number(((Math.random() * 10) - 5).toFixed(2));
 
 	response = Math.max(0, Math.min(100, response));
+
+	if (fs.existsSync("cache.json")) {
+		try {
+			let cache = JSON.parse(fs.readFileSync("cache.json"));
+
+			cache[`${user.guild.id},${user.id}`] = response;
+
+			fs.writeFileSync("cache.json", JSON.stringify(cache));
+		} catch (error) {
+			console.error(error);
+		}
+	}
 
 	return response;
 }
