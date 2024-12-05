@@ -2,9 +2,7 @@
 
 import discord from "discord.js";
 import dotenv from "dotenv";
-import validator from "validator";
 import OpenAI from "openai";
-import fs from "node:fs";
 
 dotenv.config();
 
@@ -18,12 +16,15 @@ const provider = new OpenAI({
 });
 
 // analyse a GuildMember
-async function analyse(user) {
+async function analyse(guildMember) {
 	let messages = [
 		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"gay\": X } where X is a number between 0 and 100. The higher the number, the more gay the profile is." }
 	];
 
-	messages.push({ "role": "user", "content": "User profile:\n```json\n" + JSON.stringify(user) + "\n```" });
+	const user = guildMember.user;
+	const guild = guildMember.guild;
+
+	messages.push({ "role": "user", "content": "User profile:\n```json\n" + JSON.stringify(user, null, 4) + "\n```" });
 
 	if (user.avatar) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "User avatar:" }, { "type": "image_url", "image_url": { "url": user.avatarURL({ format: "png", size: 1024 }) } } ] });
@@ -33,17 +34,19 @@ async function analyse(user) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "User banner:" }, { "type": "image_url", "image_url": { "url": user.bannerURL({ format: "png", size: 1024 }) } } ] });
 	}
 
-	messages.push({ "role": "user", "content": "Guild info:\n```json\n" + JSON.stringify(user.guild) + "\n```" });
+	messages.push({ "role": "user", "content": "Guild info:\n```json\n" + JSON.stringify(guild, null, 4) + "\n```" });
 
-	if (user.guild.icon) {
-		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild icon:" }, { "type": "image_url", "image_url": { "url": user.guild.iconURL({ format: "png", size: 1024 }) } } ] });
+	if (guild.icon) {
+		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild icon:" }, { "type": "image_url", "image_url": { "url": guild.iconURL({ format: "png", size: 1024 }) } } ] });
 	}
 
-	if (user.guild.banner) {
-		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild banner:" }, { "type": "image_url", "image_url": { "url": user.guild.bannerURL({ format: "png", size: 1024 }) } } ] });
+	if (guild.banner) {
+		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild banner:" }, { "type": "image_url", "image_url": { "url": guild.bannerURL({ format: "png", size: 1024 }) } } ] });
 	}
 
 	messages.push({ "role": "assistant", "content": "{ \"gay\": ", "prefix": true});
+
+	// console.dir(messages, { "depth": Infinity });
 
 	let response;
 
@@ -69,7 +72,7 @@ async function analyse(user) {
 	// { gay: 123 }
 
 	response = Number(response.gay); // just in case the LLM is gay and can't produce a valid number
-	// 
+	// { gay: 123 }
 
 	if (isNaN(response)) {
 		throw new TypeError("The LLM is gay and can't produce a valid number.");
