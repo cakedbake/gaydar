@@ -6,7 +6,10 @@
 - `API_KEY`: your Mistral AI API key
 
 ## Functional principle
-- Listen for join messages, then assign that person a gayness rating.
+- Listen for join messages, then assign that person a gayness rating along with an explanation.
+
+## Error handling
+- If at any point there is a failure, the bot will dispense a complimentary confetti GIF.
 
 ## Check a user manually
 ```

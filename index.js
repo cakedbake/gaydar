@@ -18,7 +18,7 @@ const provider = new OpenAI({
 // analyse a GuildMember
 async function analyse(guildMember) {
 	let messages = [
-		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"gay\": X } where X is a number between 0 and 100. The higher the number, the more gay the profile is." }
+		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"rating\": X, \"analysis\": Z } where X is a number between 0 and 100 based on how gay the profile is, and Z is the explanation for why you chose that." }
 	];
 
 	const user = guildMember.user;
@@ -44,17 +44,17 @@ async function analyse(guildMember) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild banner:" }, { "type": "image_url", "image_url": { "url": guild.bannerURL({ format: "png", size: 1024 }) } } ] });
 	}
 
-	messages.push({ "role": "assistant", "content": "{ \"gay\": ", "prefix": true});
+	messages.push({ "role": "assistant", "content": "{ \"rating\": ", "prefix": true}); // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
 
 	// console.dir(messages, { "depth": Infinity });
 
-	let response;
+	let analysis;
 
 	try {
-		response = await provider.chat.completions.create({
+		analysis = await provider.chat.completions.create({
 			"model": "pixtral-12b-2409",
 			"messages": messages,
-			"max_tokens": 8,
+			"max_tokens": 1024,
 			"temperature": 0,
 			"stop": [ "}" ]
 		});
@@ -62,27 +62,33 @@ async function analyse(guildMember) {
 		throw error;
 	}
 
-	response = response.choices[0].message.content;
+	analysis = analysis.choices[0].message.content;
 	// { "gay": 123
 
-	response = response + " }";
+	analysis = analysis + " }";
 	// { "gay": 123 }
 
-	response = JSON.parse(response); // don't catch
+	console.log(analysis);
+
+	try {
+		analysis = JSON.parse(analysis);
+	} catch (error) {
+		throw new TypeError("The LLM is gay and can't produce valid JSON.");
+	}
 	// { gay: 123 }
 
-	response = Number(response.gay); // just in case the LLM is gay and can't produce a valid number
+	analysis.rating = Number(analysis.rating); // just in case the LLM is gay and can't produce a valid number
 	// { gay: 123 }
 
-	if (isNaN(response)) {
+	if (isNaN(analysis.rating)) {
 		throw new TypeError("The LLM is gay and can't produce a valid number.");
 	}
 
-	// response += Number(((Math.random() * 10) - 5).toFixed(2));
+	// analysis.rating += Number(((Math.random() * 10) - 5).toFixed(2));
 
-	response = Math.max(0, Math.min(100, response));
+	analysis.rating = Math.max(0, Math.min(100, analysis.rating));
 
-	return response;
+	return analysis;
 }
 
 client.on("messageCreate", async (msg) => {
@@ -101,7 +107,7 @@ client.on("messageCreate", async (msg) => {
 	try {
 		const analysis = await analyse(user);
 
-		const reply = `Analysis complete. Results: <@${user.id}> is \`${analysis}\`% gay.`;
+		const reply = "Analysis complete. Results: <@" + user.id + "> is `" + analysis.rating + "`% gay. Analysis:\n```\n" + analysis.analysis + "\n```";
 
 		clearInterval(interval);
 
@@ -112,16 +118,20 @@ client.on("messageCreate", async (msg) => {
 		}
 	} catch (error) {
 		console.error(error);
-		const reply = "You have successfully broken the <@" + client.user.id + ">. Congratulations.\n```\n" + error.toString() + "\n```";
+		const GIF = "https://tenor.com/view/confetti-celebrate-colorful-celebration-gif-15816997";
+		let reply = "You have successfully broken the <@" + client.user.id + ">. Congratulations. A complimentary confetti GIF will be dispensed in <t:" + (Math.floor((new Date()).getTime() / 1000) + 10) + ":R>.";
 		clearInterval(interval);
 		try {
-			await msg.reply(reply);
+			reply = await msg.reply(reply);
 		} catch {
 			try {
-				await msg.channel.send(reply);
-			} catch { /* it's joever */ }
+				reply = await msg.channel.send(reply);
+			} catch { return; }
 		}
-		return;
+		await new Promise(resolve => setTimeout(resolve, 10000));
+		try {
+			await reply.edit(GIF);
+		} catch {}
 	}
 });
 
@@ -144,7 +154,6 @@ client.on("ready", async () => {
 		process.exit(1);
 	}
 
-	// fetch the user (no cache)
 	let user;
 	try {
 		user = await guild.members.fetch(process.argv[4]);
@@ -153,10 +162,11 @@ client.on("ready", async () => {
 		process.exit(1);
 	}
 
-	// anal-yze the user
+	// analyze the user
 	try {
 		const analysis = await analyse(user);
-		console.log("Analysis complete. Results:", user.user.tag, "(ID:" + user.user.id + ") is", analysis, "% gay.");
+		console.log("Analysis complete. Results:", user.user.tag, "(ID:" + user.user.id + ") is", analysis.rating, "% gay, for reasons:", analysis.analysis);
+		console.log(analysis);
 	} catch (error) {
 		console.error(error);
 		process.exit(1);
