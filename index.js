@@ -163,8 +163,7 @@ client.on("ready", async () => {
 	// analyze the user
 	try {
 		const analysis = await analyse(user);
-		console.log("Analysis complete. Results:", user.user.tag, "(ID:" + user.user.id + ") is", analysis.rating, "% gay, for reasons:", analysis.analysis);
-		console.log(analysis);
+		console.log("Analysis complete. Results:", user.user.tag, "(ID: " + user.user.id + ") is", analysis.rating, "% gay, for reasons:", analysis.analysis);
 	} catch (error) {
 		console.error(error);
 		process.exit(1);
