@@ -68,8 +68,6 @@ async function analyse(guildMember) {
 	analysis = analysis + " }";
 	// { "gay": 123 }
 
-	console.log(analysis);
-
 	try {
 		analysis = JSON.parse(analysis);
 	} catch (error) {
