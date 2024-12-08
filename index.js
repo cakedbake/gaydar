@@ -18,7 +18,7 @@ const provider = new OpenAI({
 // analyse a GuildMember
 async function analyse(guildMember) {
 	let messages = [
-		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"rating\": X, \"analysis\": Z } where X is a number between 0 and 100 based on how gay the profile is, and Z is the explanation for why you chose that." }
+		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"rating\": X, \"analysis\": Z } where X is a number between 0 and 100 based on how gay the profile is, and Z is the explanation for why you chose that. A score of 0 means straight, and a score of 100 means gay." }
 	];
 
 	const user = guildMember.user;
