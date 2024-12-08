@@ -92,7 +92,7 @@ async function analyse(guildMember) {
 client.on("messageCreate", async (msg) => {
 	if (msg.type !== 7) { return; }
 
-	if (process.argv[2] === "--manual") { return; }
+	if (process.argv[2] === "--probe") { return; }
 
 	await msg.channel.sendTyping();
 
@@ -139,8 +139,8 @@ client.on("ready", async () => {
 	console.log("ready to ruin some lives as", client.user.tag);
 
 	
-	if (process.argv[2] !== "--manual") { return; }
-	// /usr/bin/node .../index.js --manual GUILD_ID USER_ID
+	if (process.argv[2] !== "--probe") { return; }
+	// /usr/bin/node .../index.js --probe GUILD_ID USER_ID
 	if (!process.argv[4]) {
 		console.error("Usage:", process.argv[1], process.argv[2], "<GUILD_ID> <USER_ID>");
 		process.exit(1);
