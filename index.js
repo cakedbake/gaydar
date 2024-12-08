@@ -52,7 +52,7 @@ async function analyse(guildMember) {
 
 	try {
 		analysis = await provider.chat.completions.create({
-			"model": "pixtral-12b-2409",
+			"model": "pixtral-large-latest",
 			"messages": messages,
 			"max_tokens": 1024,
 			"temperature": 0,
