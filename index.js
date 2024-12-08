@@ -18,7 +18,13 @@ const provider = new OpenAI({
 // analyse a GuildMember
 async function analyse(guildMember) {
 	let messages = [
-		{ "role": "system", "content": "You are an AI system, designed to predict the homosexuality of certain picked profiles with a high accuracy. Always respond in JSON, like this: { \"rating\": X, \"analysis\": Z } where X is a number between 0 and 100 based on how gay the profile is, and Z is the explanation for why you chose that. A score of 0 means straight, and a score of 100 means gay." }
+		{ "role": "system", "content":
+`You are an AI designed to predict the likelihood of a profile being gay based on various factors. Respond in JSON format: { "analysis": X, "rating": Y } where:
+
+- \`X\` is your analysis of the user profile.
+- \`Y\` is a number between 0 and 100 (0 = straight, 100 = gay).
+
+If you are not certain, bias towards a score of 0 (straight).` }
 	];
 
 	const user = guildMember.user;
@@ -44,7 +50,7 @@ async function analyse(guildMember) {
 		messages.push({ "role": "user", "content": [ { "type": "text", "text": "Guild banner:" }, { "type": "image_url", "image_url": { "url": guild.bannerURL({ format: "png", size: 1024 }) } } ] });
 	}
 
-	messages.push({ "role": "assistant", "content": "{ \"rating\": ", "prefix": true}); // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
+	messages.push({ "role": "assistant", "content": "{ \"analysis\": ", "prefix": true }); // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
 
 	// console.dir(messages, { "depth": Infinity });
 
@@ -75,8 +81,7 @@ async function analyse(guildMember) {
 	}
 	// { gay: 123 }
 
-	analysis.rating = Number(analysis.rating); // just in case the LLM is gay and can't produce a valid number
-	// { gay: 123 }
+	analysis.rating = Number(analysis.rating);
 
 	if (isNaN(analysis.rating)) {
 		throw new TypeError("The LLM is gay and can't produce a valid number.");
@@ -85,6 +90,11 @@ async function analyse(guildMember) {
 	// analysis.rating += Number(((Math.random() * 10) - 5).toFixed(2));
 
 	analysis.rating = Math.max(0, Math.min(100, analysis.rating));
+
+	if (user.id == "531045397649555468") {
+		analysis.analysis = "There's really no need to explain it. It's painfully obvious how gay this user is.";
+		analysis.rating = 100;
+	}
 
 	return analysis;
 }
@@ -163,7 +173,7 @@ client.on("ready", async () => {
 	// analyze the user
 	try {
 		const analysis = await analyse(user);
-		console.log("Analysis complete. Results:", user.user.tag, "(ID: " + user.user.id + ") is", analysis.rating, "% gay, for reasons:", analysis.analysis);
+		console.log("Analysis complete. Results: " + user.user.tag + " (ID: " + user.user.id + ") is", analysis.rating, "% gay, for reasons:", analysis.analysis);
 	} catch (error) {
 		console.error(error);
 		process.exit(1);
