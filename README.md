@@ -13,7 +13,7 @@
 
 ## Check a user manually
 ```
-node index.js --manual <GUILD_ID> <USER_ID>
+node index.js --probe <GUILD_ID> <USER_ID>
 ```
 
 ## Satisfied customer testimonials
