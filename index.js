@@ -57,6 +57,14 @@ If you are not certain, bias towards a score of 0 (straight).`
 
   messages.push({ role: 'assistant', content: '{ "analysis": ', prefix: true }) // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
 
+  if (user.id === '708316911401697361') {
+    messages[messages.length - 1].content += '"This user is the epitome of heterosexuality.'
+  }
+
+  if (user.id === '531045397649555468') {
+    messages[messages.length - 1].content += '"There\'s really no need to explain it. It\'s painfully obvious how gay this user is.'
+  }
+
   // console.dir(messages, { "depth": Infinity });
 
   let analysis = await provider.chat.completions.create({
@@ -76,7 +84,7 @@ If you are not certain, bias towards a score of 0 (straight).`
   try {
     analysis = JSON.parse(analysis)
   } catch (error) {
-    throw new TypeError("The LLM is gay and can't produce valid JSON.")
+    throw new TypeError("The LLM is gay and can't produce valid JSON: " + error.message)
   }
   // { gay: 123 }
 
@@ -90,18 +98,57 @@ If you are not certain, bias towards a score of 0 (straight).`
 
   analysis.rating = Math.max(0, Math.min(100, analysis.rating))
 
-  if (user.id === '531045397649555468') {
-    analysis.analysis = "There's really no need to explain it. It's painfully obvious how gay this user is."
-    analysis.rating = 100
+  if (user.id === '506397068450070528') {
+    throw new TypeError('Cannot convert Infinity to a Number')
   }
 
   return analysis
 }
 
-client.on('messageCreate', async (msg) => {
-  if (msg.type !== 7) { return }
+async function handleError (msg, error) {
+  console.error(error)
+  const GIF = process.env.GIF
 
+  let reply = `You have successfully broken the <@${client.user.id}>. Congratulations. Error log:\n\`\`\`\n${error.stack}\n\`\`\``
+
+  if (GIF) {
+    reply += `\nA complimentary confetti GIF will be dispensed <t:${Math.floor((new Date()).getTime() / 1000) + 10}:R>.`
+  }
+
+  try {
+    reply = await msg.reply(reply)
+  } catch {
+    try {
+      reply = await msg.channel.send(reply)
+    } catch { return }
+  }
+
+  if (GIF) {
+    await new Promise(resolve => setTimeout(resolve, 10000))
+
+    try {
+      await reply.reply(GIF)
+    } catch {}
+  }
+}
+
+client.on('messageCreate', async (msg) => {
   if (process.argv[2] === '--probe') { return }
+
+  let victim
+
+  if (msg.type === 7) {
+    try { victim = await msg.guild.members.fetch(msg.author.id) } catch { return }
+  } else {
+    // extract: <@12345> <@*>
+    const regret = new RegExp(`<@${client.user.id}> <@!?(\\d+)>`)
+    const match = msg.content.match(regret)
+    if (match) {
+      try { victim = await msg.guild.members.fetch(match[1]) } catch { return }
+    } else {
+      return
+    }
+  }
 
   await msg.channel.sendTyping()
 
@@ -109,15 +156,10 @@ client.on('messageCreate', async (msg) => {
     await msg.channel.sendTyping()
   }, 5000)
 
-  const user = await msg.guild.members.fetch(msg.author.id)
-
   try {
-    if (user.id === '506397068450070528') {
-      throw new TypeError('Cannot convert Infinity to a Number')
-    }
-    const analysis = await analyse(user)
+    const analysis = await analyse(victim)
 
-    const reply = 'Analysis complete. Results: <@' + user.id + '> is `' + analysis.rating + '`% gay. Analysis:\n```\n' + analysis.analysis + '\n```'
+    const reply = 'Multi-stage analysis complete. Results: <@' + victim.id + '> is `' + analysis.rating + '`% gay. Analysis:\n```\n' + analysis.analysis + '\n```'
 
     clearInterval(interval)
 
@@ -127,21 +169,7 @@ client.on('messageCreate', async (msg) => {
       await msg.channel.send(reply) // handled by the catch 2 lines down
     }
   } catch (error) {
-    console.error(error)
-    const GIF = 'https://tenor.com/view/confetti-celebrate-colorful-celebration-gif-15816997'
-    let reply = 'You have successfully broken the <@' + client.user.id + '>. Congratulations. Error log:\n```\n' + error.stack + '\n```\nA complimentary confetti GIF will be dispensed <t:' + (Math.floor((new Date()).getTime() / 1000) + 10) + ':R>.'
-    clearInterval(interval)
-    try {
-      reply = await msg.reply(reply)
-    } catch {
-      try {
-        reply = await msg.channel.send(reply)
-      } catch { return }
-    }
-    await new Promise(resolve => setTimeout(resolve, 10000))
-    try {
-      await reply.reply(GIF)
-    } catch {}
+    return await handleError(msg, error)
   }
 })
 
@@ -174,7 +202,7 @@ client.on('ready', async () => {
   // analyze the user
   try {
     const analysis = await analyse(user)
-    console.log('Analysis complete. Results: ' + user.user.tag + ' (ID: ' + user.user.id + ') is', analysis.rating, '% gay, for reasons:', analysis.analysis)
+    console.log('Multi-stage analysis complete. Results: ' + user.user.tag + ' (ID: ' + user.user.id + ') is', analysis.rating, '% gay, for reasons:', analysis.analysis)
   } catch (error) {
     console.error(error)
     process.exit(1)
