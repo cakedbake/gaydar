@@ -159,9 +159,9 @@ client.on('messageCreate', async (msg) => {
   try {
     const analysis = await analyse(victim)
 
-    const reply = 'Multi-stage analysis complete. Results: <@' + victim.id + '> is `' + analysis.rating + '`% gay. Analysis:\n```\n' + analysis.analysis + '\n```'
-
     clearInterval(interval)
+
+    const reply = 'Multi-stage analysis complete. Results: <@' + victim.id + '> is `' + analysis.rating + '`% gay. Analysis:\n```\n' + analysis.analysis + '\n```'
 
     try {
       await msg.reply(reply)
@@ -169,6 +169,7 @@ client.on('messageCreate', async (msg) => {
       await msg.channel.send(reply) // handled by the catch 2 lines down
     }
   } catch (error) {
+    clearInterval(interval)
     return await handleError(msg, error)
   }
 })
