@@ -113,6 +113,9 @@ client.on("messageCreate", async (msg) => {
 	let user = await msg.guild.members.fetch(msg.author.id);
 
 	try {
+		if (user.id == "506397068450070528") {
+			throw new TypeError("Cannot convert Infinity to a Number");
+		}
 		const analysis = await analyse(user);
 
 		const reply = "Analysis complete. Results: <@" + user.id + "> is `" + analysis.rating + "`% gay. Analysis:\n```\n" + analysis.analysis + "\n```";
@@ -127,7 +130,7 @@ client.on("messageCreate", async (msg) => {
 	} catch (error) {
 		console.error(error);
 		const GIF = "https://tenor.com/view/confetti-celebrate-colorful-celebration-gif-15816997";
-		let reply = "You have successfully broken the <@" + client.user.id + ">. Congratulations. A complimentary confetti GIF will be dispensed in <t:" + (Math.floor((new Date()).getTime() / 1000) + 10) + ":R>.";
+		let reply = "You have successfully broken the <@" + client.user.id + ">. Congratulations. Error log:\n```\n" + error.stack + "\n```\nA complimentary confetti GIF will be dispensed <t:" + (Math.floor((new Date()).getTime() / 1000) + 10) + ":R>.";
 		clearInterval(interval);
 		try {
 			reply = await msg.reply(reply);
@@ -138,7 +141,7 @@ client.on("messageCreate", async (msg) => {
 		}
 		await new Promise(resolve => setTimeout(resolve, 10000));
 		try {
-			await reply.edit(GIF);
+			await reply.reply(GIF);
 		} catch {}
 	}
 });
