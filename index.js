@@ -45,6 +45,8 @@ If you are not certain, bias towards a score of 0 (straight).`
     messages.push({ role: 'user', content: [{ type: 'text', text: 'User banner:' }, { type: 'image_url', image_url: { url: user.bannerURL({ format: 'png', size: 1024 }) } }] })
   }
 
+  messages.push({ role: 'user', content: 'GuildMember profile:\n```json\n' + JSON.stringify(guildMember, null, 4) + '\n```' })
+
   messages.push({ role: 'user', content: 'Guild info:\n```json\n' + JSON.stringify(guild, null, 4) + '\n```' })
 
   if (guild.icon) {
@@ -144,6 +146,12 @@ client.on('messageCreate', async (msg) => {
     const regret = new RegExp(`<@${client.user.id}> <@!?(\\d+)>`)
     const match = msg.content.match(regret)
     if (match) {
+      if (client.user.id === match[1]) {
+        try {
+          return await msg.reply('Are you stupid?')
+        } catch { return }
+      }
+
       try { victim = await msg.guild.members.fetch(match[1]) } catch { return }
     } else {
       return
