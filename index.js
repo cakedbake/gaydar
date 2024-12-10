@@ -139,7 +139,7 @@ async function handleError (msg, error) {
 client.on('messageCreate', async (msg) => {
   if (process.argv[2] === '--probe') { return }
 
-  if (msg.author.id == client.user.id) { return }
+  if (msg.author.id === client.user.id) { return }
 
   let victim
 
