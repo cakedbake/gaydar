@@ -12,7 +12,11 @@ const client = new discord.Client({
   ]
 })
 
-const mistral = new Mistral();
+const mistral = new Mistral()
+
+function reJSON (obj) {
+  return JSON.parse(JSON.stringify(obj))
+}
 
 // analyse a GuildMember
 async function analyse (guildMember) {
@@ -31,10 +35,23 @@ Always be snarky in your analysis.`
     }
   ]
 
-  let user = await guildMember.user.fetch();
-  let guild = await guildMember.guild.fetch();
+  const user = await guildMember.user.fetch()
+  const guild = await guildMember.guild.fetch()
 
-  messages.push({ role: 'user', content: [{ type: 'text', text: 'User profile:\n```json\n' + JSON.stringify(user, null, 4) + '\n```' }] })
+  const output = {}
+
+  output.guild = reJSON(guild)
+  output.guild.members = reJSON(guild.members.cache.map(member => member.user.tag))
+  output.guild.channels = reJSON(guild.channels.cache.map(channel => channel.name))
+  output.guild.roles = reJSON(guild.roles.cache.map(role => role.name))
+  output.guild.emojis = reJSON(guild.emojis.cache.map(emoji => emoji.name))
+  output.guild.stickers = reJSON(guild.stickers.cache.map(sticker => sticker.name))
+
+  output.user = reJSON(guildMember)
+
+  output.user.roles = reJSON(guildMember.roles.cache.map(role => role.name))
+
+  messages.push({ role: 'user', content: [{ type: 'text', text: '```json\n' + JSON.stringify(output, null, 4) + '\n```' }] })
 
   if (user.avatar) {
     messages.push({ role: 'user', content: [{ type: 'text', text: 'User avatar:' }, { type: 'image_url', imageUrl: user.avatarURL({ format: 'png', size: 1024 }) }] })
@@ -43,18 +60,6 @@ Always be snarky in your analysis.`
   if (user.banner) {
     messages.push({ role: 'user', content: [{ type: 'text', text: 'User banner:' }, { type: 'image_url', imageUrl: user.bannerURL({ format: 'png', size: 1024 }) }] })
   }
-
-  // guild.members, guild.channels, guild.roles, guild.emojis, guild.stickers, guildMember.roles
-  // guild.members = (await guild.members.fetch()).map(member => member.tag)
-  // guild.channels = (await guild.channels.fetch()).map(channel => channel.name)
-  // guild.roles = guild.roles.cache.map(role => role.name)
-  // guild.emojis = (await guild.emojis.fetch()).map(emoji => emoji.name)
-  // guild.stickers = (await guild.stickers.fetch()).map(sticker => sticker.name)
-  // guildMember.roles = (await guildMember.roles.fetch()).map(role => role.name)
-
-  messages.push({ role: 'user', content: [{ type: 'text', text: 'GuildMember profile:\n```json\n' + JSON.stringify(guildMember, null, 4) + '\n```' }] })
-
-  messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild info:\n```json\n' + JSON.stringify(guild, null, 4) + '\n```' }] })
 
   if (guild.icon) {
     messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild icon:' }, { type: 'image_url', imageUrl: guild.iconURL({ format: 'png', size: 1024 }) }] })
@@ -65,14 +70,6 @@ Always be snarky in your analysis.`
   }
 
   messages.push({ role: 'assistant', content: '{ "analysis": ', prefix: true }) // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
-
-  if (user.id === '708316911401697361') {
-    // messages[messages.length - 1].content += '"This user is the epitome of heterosexuality.'
-  }
-
-  if (user.id === '531045397649555468') {
-    messages[messages.length - 1].content += '"There\'s really no need to explain it. It\'s painfully obvious how gay this user is.'
-  }
 
   // console.dir(messages, { "depth": Infinity });
 
@@ -103,11 +100,13 @@ Always be snarky in your analysis.`
     throw new TypeError("The LLM is gay and can't produce a valid number.")
   }
 
-  // analysis.rating += Number(((Math.random() * 10) - 5).toFixed(2));
+  // const deviation = Number(((Math.random() * 10) - 5).toFixed(2));
+  // analysis.analysis = analysis.analysis.replaceAll(analysis.rating.toString(), (analysis.rating + deviation).toString());
+  // analysis.rating = analysis.rating + deviation;
 
   analysis.rating = Math.max(0, Math.min(100, analysis.rating))
 
-  if (user.id === '506397068450070528') {
+  if (user.id === '531045397649555468') { // fuck you.
     throw new TypeError('Cannot convert Infinity to a Number')
   }
 
