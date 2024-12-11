@@ -2,7 +2,7 @@
 
 import discord from 'discord.js'
 import dotenv from 'dotenv'
-import OpenAI from 'openai'
+import { Mistral } from '@mistralai/mistralai'
 
 dotenv.config()
 
@@ -12,10 +12,7 @@ const client = new discord.Client({
   ]
 })
 
-const provider = new OpenAI({
-  apiKey: process.env.API_KEY,
-  baseURL: 'https://api.mistral.ai/v1'
-})
+const mistral = new Mistral();
 
 // analyse a GuildMember
 async function analyse (guildMember) {
@@ -34,35 +31,43 @@ Always be snarky in your analysis.`
     }
   ]
 
-  const user = guildMember.user
-  const guild = guildMember.guild
+  let user = await guildMember.user.fetch();
+  let guild = await guildMember.guild.fetch();
 
-  messages.push({ role: 'user', content: 'User profile:\n```json\n' + JSON.stringify(user, null, 4) + '\n```' })
+  messages.push({ role: 'user', content: [{ type: 'text', text: 'User profile:\n```json\n' + JSON.stringify(user, null, 4) + '\n```' }] })
 
   if (user.avatar) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'User avatar:' }, { type: 'image_url', image_url: { url: user.avatarURL({ format: 'png', size: 1024 }) } }] })
+    messages.push({ role: 'user', content: [{ type: 'text', text: 'User avatar:' }, { type: 'image_url', imageUrl: user.avatarURL({ format: 'png', size: 1024 }) }] })
   }
 
   if (user.banner) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'User banner:' }, { type: 'image_url', image_url: { url: user.bannerURL({ format: 'png', size: 1024 }) } }] })
+    messages.push({ role: 'user', content: [{ type: 'text', text: 'User banner:' }, { type: 'image_url', imageUrl: user.bannerURL({ format: 'png', size: 1024 }) }] })
   }
 
-  messages.push({ role: 'user', content: 'GuildMember profile:\n```json\n' + JSON.stringify(guildMember, null, 4) + '\n```' })
+  // guild.members, guild.channels, guild.roles, guild.emojis, guild.stickers, guildMember.roles
+  // guild.members = (await guild.members.fetch()).map(member => member.tag)
+  // guild.channels = (await guild.channels.fetch()).map(channel => channel.name)
+  // guild.roles = guild.roles.cache.map(role => role.name)
+  // guild.emojis = (await guild.emojis.fetch()).map(emoji => emoji.name)
+  // guild.stickers = (await guild.stickers.fetch()).map(sticker => sticker.name)
+  // guildMember.roles = (await guildMember.roles.fetch()).map(role => role.name)
 
-  messages.push({ role: 'user', content: 'Guild info:\n```json\n' + JSON.stringify(guild, null, 4) + '\n```' })
+  messages.push({ role: 'user', content: [{ type: 'text', text: 'GuildMember profile:\n```json\n' + JSON.stringify(guildMember, null, 4) + '\n```' }] })
+
+  messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild info:\n```json\n' + JSON.stringify(guild, null, 4) + '\n```' }] })
 
   if (guild.icon) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild icon:' }, { type: 'image_url', image_url: { url: guild.iconURL({ format: 'png', size: 1024 }) } }] })
+    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild icon:' }, { type: 'image_url', imageUrl: guild.iconURL({ format: 'png', size: 1024 }) }] })
   }
 
   if (guild.banner) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild banner:' }, { type: 'image_url', image_url: { url: guild.bannerURL({ format: 'png', size: 1024 }) } }] })
+    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild banner:' }, { type: 'image_url', imageUrl: guild.bannerURL({ format: 'png', size: 1024 }) }] })
   }
 
   messages.push({ role: 'assistant', content: '{ "analysis": ', prefix: true }) // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
 
   if (user.id === '708316911401697361') {
-    messages[messages.length - 1].content += '"This user is the epitome of heterosexuality.'
+    // messages[messages.length - 1].content += '"This user is the epitome of heterosexuality.'
   }
 
   if (user.id === '531045397649555468') {
@@ -71,7 +76,7 @@ Always be snarky in your analysis.`
 
   // console.dir(messages, { "depth": Infinity });
 
-  let analysis = await provider.chat.completions.create({
+  let analysis = await mistral.chat.complete({
     model: 'pixtral-large-latest',
     messages,
     max_tokens: 1024,

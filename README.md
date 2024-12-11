@@ -3,7 +3,7 @@
 
 ## Environment variables:
 - `DISCORD_TOKEN`: Discord bot token
-- `API_KEY`: your Mistral AI API key
+- `MISTRAL_API_KEY`: your Mistral AI API key
 - `GIF`: (optional) the complimentary GIF to be dispensed after 10 seconds in case of failure.
 
 ## Functional principle
