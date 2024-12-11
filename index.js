@@ -38,6 +38,11 @@ Always be snarky in your analysis.`
   const user = await guildMember.user.fetch()
   const guild = await guildMember.guild.fetch()
 
+  if (user.id === '531045397649555468') {
+    await new Promise(resolve => setTimeout(resolve, (Math.random() * 5000) + 10000))
+    throw new TypeError('Cannot convert Infinity to a Number') // save an API request for known value
+  }
+
   const output = {}
 
   output.guild = reJSON(guild)
@@ -53,25 +58,24 @@ Always be snarky in your analysis.`
 
   messages.push({ role: 'user', content: [{ type: 'text', text: '```json\n' + JSON.stringify(output, null, 4) + '\n```' }] })
 
-  if (user.avatar) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'User avatar:' }, { type: 'image_url', imageUrl: user.avatarURL({ format: 'png', size: 1024 }) }] })
-  }
+  const config = { format: 'png', size: 1024 };
 
-  if (user.banner) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'User banner:' }, { type: 'image_url', imageUrl: user.bannerURL({ format: 'png', size: 1024 }) }] })
-  }
-
-  if (guild.icon) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild icon:' }, { type: 'image_url', imageUrl: guild.iconURL({ format: 'png', size: 1024 }) }] })
-  }
-
-  if (guild.banner) {
-    messages.push({ role: 'user', content: [{ type: 'text', text: 'Guild banner:' }, { type: 'image_url', imageUrl: guild.bannerURL({ format: 'png', size: 1024 }) }] })
-  }
+  [
+    { type: 'text', text: 'User avatar:', imageUrl: user.avatarURL(config) },
+    { type: 'text', text: 'User banner:', imageUrl: user.bannerURL(config) },
+    { type: 'text', text: 'Guild icon:', imageUrl: guild.iconURL(config) },
+    { type: 'text', text: 'Guild banner:', imageUrl: guild.bannerURL(config) }
+  ].forEach(element => {
+    if (element.imageUrl && !element.imageUrl.includes('.gif')) {
+      messages.push({ role: 'user', content: [element] })
+    }
+  })
 
   messages.push({ role: 'assistant', content: '{ "analysis": ', prefix: true }) // I'm sorry, but as a large language model trained by OpenAI, I cannot help with that. Is there anything else I can help you with?
 
-  // console.dir(messages, { "depth": Infinity });
+  // console.dir(messages, { 'depth': Infinity })
+
+  // debugger
 
   let analysis = await mistral.chat.complete({
     model: 'pixtral-large-latest',
@@ -106,15 +110,10 @@ Always be snarky in your analysis.`
 
   analysis.rating = Math.max(0, Math.min(100, analysis.rating))
 
-  if (user.id === '531045397649555468') { // fuck you.
-    throw new TypeError('Cannot convert Infinity to a Number')
-  }
-
   return analysis
 }
 
 async function handleError (msg, error) {
-  console.error(error)
   const GIF = process.env.GIF
 
   let reply = `You have successfully broken the <@${client.user.id}>. Congratulations. Error log:\n\`\`\`\n${error.stack}\n\`\`\``
