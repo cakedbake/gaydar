@@ -29,9 +29,7 @@ async function analyse (guildMember) {
 - \`X\` is your analysis of the user profile.
 - \`Y\` is a number between 0 and 100 (0 = straight, 100 = gay).
 
-If you are not certain, bias towards a score of 0 (straight).
-
-Always be snarky in your analysis.`
+If you are not certain, bias towards a score of 0 (straight).`
     }
   ]
 
