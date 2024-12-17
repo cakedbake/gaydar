@@ -13,11 +13,3 @@
 1. User join messages (type 7)
 2. @Gaydar @target
 3. `node index.js --probe <GUILD_ID> <USER_ID>`
-
-## Satisfied customer testimonials
-![testimonials/1.png](testimonials/1.png)
-![testimonials/2.png](testimonials/2.png)
-![testimonials/3.png](testimonials/3.png)
-![testimonials/4.png](testimonials/4.png)
-![testimonials/5.png](testimonials/5.png)
-![testimonials/6.png](testimonials/6.png)
